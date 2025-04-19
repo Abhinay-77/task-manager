@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register</title>
+</head>
+<body>
+  <h2>Register</h2>
+  <input id="name" placeholder="Full Name" required><br>
+  <input id="email" placeholder="Email" required><br>
+  <input id="password" type="password" placeholder="Password" required><br>
+  <button id="registerBtn">Register</button>
+  <p>Already have an account? <a href="index.html">Login here</a></p>
+
+  <script>
+    const API = 'http://localhost:5000/api/auth';
+
+    document.getElementById('registerBtn').addEventListener('click', async () => {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!name || !email || !password) {
+        return alert('All fields are required.');
+      }
+
+      try {
+        const res = await fetch(`${API}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert(data.message);
+          window.location.href = 'index.html';
+        } else {
+          alert(data.message || 'Registration failed');
+        }
+      } catch (err) {
+        console.error('Register error:', err);
+        alert('Something went wrong. Try again.');
+      }
+    });
+  </script>
+</body>
+</html>

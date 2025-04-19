@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Management</title>
+</head>
+<body>
+  <h2>Manage Your Tasks</h2>
+
+  <div>
+    <input id="taskTitle" placeholder="Enter Task Title"><br>
+    <input id="taskDescription" placeholder="Enter Description"><br>
+    <input id="taskDueDate" type="date"><br>
+    <select id="taskStatus">
+      <option value="pending">Pending</option>
+      <option value="in-progress">In Progress</option>
+      <option value="completed">Completed</option>
+    </select><br><br>
+    <button onclick="addNewTask()">Add New Task</button>
+  </div>
+
+  <h3>Task List</h3>
+  <ul id="taskList"></ul>
+
+  <script>
+    const API_URL = 'http://localhost:5000/api/tasks';
+    const userToken = localStorage.getItem('token');
+
+    if (!userToken) {
+      alert("You need to log in first.");
+      window.location.href = "login.html"; // Redirect to login page if no token found
+    }
+
+    // Fetch and display all tasks
+    async function getAllTasks() {
+      try {
+        const response = await fetch(API_URL + '/all', {
+          headers: { Authorization: 'Bearer ' + userToken }
+        });
+        const tasks = await response.json();
+
+        const taskListElement = document.getElementById('taskList');
+        taskListElement.innerHTML = '';
+
+        if (tasks.length === 0) {
+          taskListElement.innerHTML = '<li>No tasks found.</li>';
+        } else {
+          tasks.forEach(task => {
+            const taskItem = document.createElement('li');
+            taskItem.innerHTML = `
+              <b>${task.title}</b> - ${task.status}
+              <button onclick="deleteTask('${task._id}')">Delete</button>
+            `;
+            taskListElement.appendChild(taskItem);
+          });
+        }
+      } catch (err) {
+        console.error("Fetching tasks failed:", err);
+        alert("Error fetching tasks. Please try again.");
+      }
+    }
+
+    // Add a new task
+    async function addNewTask() {
+      const title = document.getElementById('taskTitle').value.trim();
+      const description = document.getElementById('taskDescription').value.trim();
+      const dueDate = document.getElementById('taskDueDate').value;
+      const status = document.getElementById('taskStatus').value;
+
+      if (!title) {
+        return alert("Title is required.");
+      }
+
+      try {
+        const response = await fetch(API_URL + '/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + userToken
+          },
+          body: JSON.stringify({ title, description, dueDate, status })
+        });
+
+        const responseData = await response.json();
+        alert('Task added successfully!');
+        getAllTasks();
+      } catch (err) {
+        console.error("Adding task failed:", err);
+        alert("Could not add task.");
+      }
+    }
+
+    // Delete a task by ID
+    async function deleteTask(taskId) {
+      if (!confirm("Are you sure you want to delete this task?")) return;
+
+      try {
+        const response = await fetch(`${API_URL}/delete/${taskId}`, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + userToken }
+        });
+
+        const responseData = await response.json();
+        alert(responseData.message);
+        getAllTasks();
+      } catch (err) {
+        console.error("Deleting task failed:", err);
+        alert("Could not delete task.");
+      }
+    }
+
+    // Load tasks when the page loads
+    getAllTasks();
+  </script>
+</body>
+</html>
